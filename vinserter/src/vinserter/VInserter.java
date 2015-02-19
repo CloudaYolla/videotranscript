@@ -1,3 +1,5 @@
+// Copyright 2015 Ecosystem Players. All Rights Reserved
+
 package vinserter;
 
 import java.io.File;
