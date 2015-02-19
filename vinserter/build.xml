@@ -1,0 +1,70 @@
+<project name="VInserter" basedir="." default="main">
+
+    <property name="src.dir"     value="src"/>
+    <property name="build.dir"   value="bin"/>
+    <property name="classes.dir" value="${build.dir}/classes"/>
+    <property name="jar.dir"     value="dist"/>
+	<property name="lib.dir"     value="lib"/>
+	
+    <path id="classpath">
+        <fileset dir="${lib.dir}" includes="**/*.jar"/>
+    </path>
+
+
+    <property name="main-class"  value="vinserter.VInserter"/>
+
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+        <delete dir="${jar.dir}"/>
+    </target>
+
+    <target name="compile">
+        <mkdir dir="${classes.dir}"/>
+        <javac includeantruntime="false" srcdir="${src.dir}" destdir="${classes.dir}">
+        	<classpath>
+        		<path refid="classpath" />
+        	</classpath>
+
+        	</javac>
+    </target>
+
+    <target name="jar" depends="compile">
+        <mkdir dir="${jar.dir}"/>
+        <jar destfile="${jar.dir}/${ant.project.name}.jar" basedir="${classes.dir}">
+            <manifest>
+                <attribute name="Main-Class" value="${main-class}"/>
+            </manifest>
+     
+        	<fileset dir=".">
+<!--        		  <include name="lib/*.jar"/> -->
+      		  <include name="README.txt"/>
+       		  <include name="transform2sql.xsl"/>
+        		</fileset>
+        </jar>
+    </target>
+
+	   <target name="zip" depends="jar">
+   	 	<zip destfile="${jar.dir}/vinserter-0.1.1.zip">
+   	    	<zipfileset  dir="${jar.dir}" prefix="vinserter-0.1.1"/>
+      	    <zipfileset  dir="." includes="README.txt" fullpath="vinserter-0.1.1/README.txt"/>
+      	    <zipfileset  dir="." includes="transform2sql.xsl" fullpath="vinserter-0.1.1/transform2sql.xsl"/>
+      	    <zipfileset  dir="${lib.dir}" includes="*.jar" prefix="vinserter-0.1.1/lib/"/>
+    	  	</zip>
+	    </target>
+
+    <target name="run" depends="jar">
+        <java fork="true" classname="${main-class}">
+        	<classpath>
+        		<path refid="classpath" />
+        		<path location="${jar.dir}/${ant.project.name}.jar" />
+        	</classpath>
+        	
+        </java>
+    	
+    </target>
+
+    <target name="clean-build" depends="clean,jar"/>
+
+    <target name="main" depends="clean,jar"/>
+
+</project>
