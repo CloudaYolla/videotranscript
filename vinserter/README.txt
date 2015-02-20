@@ -1,4 +1,4 @@
-#Copyright 2015 Ecosystem Players, Hasan Basri Akirmak
+#Copyright 2015 Ecosystem Players. All rights reserved. Hasan Basri Akirmak
 
 How to install
 	1-FTP dist/jar file & transform.xsl

@@ -1,4 +1,4 @@
-// Copyright 2015 Ecosystem Players. All Rights Reserved
+// Copyright 2015 Ecosystem Players. All Rights Reserved. Hasan Basri AKIRMAK
 
 package vinserter;
 
@@ -31,7 +31,7 @@ import com.amazonaws.services.sqs.model.DeleteMessageRequest;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 
-public class VInserter {
+public class VInserter extends Thread {
 
 	// JDBC driver name and database URL
 	static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
@@ -87,9 +87,25 @@ public class VInserter {
 			ClassNotFoundException, Exception {
 		
 
-		new VInserter();
-		consumeSqs();
-		
+        VInserter t = new VInserter();
+        t.setDaemon(false);
+        // When false, (i.e. when it's a user thread),
+        // the Worker thread continues to run.
+        // When true, (i.e. when it's a daemon thread),
+        // the Worker thread terminates when the main 
+        // thread terminates.
+        
+        t.start();
+
+        try {
+            Thread.sleep(7500);
+        } catch (InterruptedException x) {  
+        	
+        }
+
+        System.out.println("Main thread exiting...");
+				
+        
 		
 /*		if (args == null) {
 			System.out.println("Usage: vinserter <video id> ...");
@@ -107,18 +123,48 @@ public class VInserter {
 	
 	}
 	
+    public void run() {
+        System.out.println("Running Daemon thread");
+
+        int count = 0;
+        try {
+        	
+            while (true) {
+                try {
+
+                    Thread.sleep(5000);
+                    
+                    consumeSqs();
+                } catch (InterruptedException x) {}
+        		 catch (Exception e) {}
+
+                System.out.println("Thread executed" + count++ + " times...");
+            }
+        } finally {
+            System.out.println("Leaving run Method");
+
+            // Close DB
+            System.out.println("Closing DB connection.\n");
+            try {
+              conn.close(); } catch (Exception e) {}
+
+        }
+    }
+
+	
 	public static void consumeSqs () throws Exception {
 
         try {
-            System.out.println("  QueueUrl: " + QUEUE_URL);
+            System.out.println("Receiving messages from : " + QUEUE_URL);
        
             // Receive messages
             System.out.println("Receiving messages from MyQueue.\n");
             ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(QUEUE_URL);
                         	
             List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
-            System.out.println("Num Messages:" + messages.size());
 
+            if (messages.size() > 0) {
+                System.out.println("Num Messages:" + messages.size());
             for (Message message : messages) {
 				String[] videoIds = message.getBody().split("\\s+");
 				for (int i = 0; i < videoIds.length; i++) {
@@ -128,18 +174,17 @@ public class VInserter {
 							System.out.println(sql);
 							sqlToDb(sql);
 
+				            // Delete the message
+				            System.out.println("Deleting the message.\n");
+
+				            String messageRecieptHandle = messages.get(i).getReceiptHandle();
+				            sqs.deleteMessage(new DeleteMessageRequest(QUEUE_URL, messageRecieptHandle));
+
 				}
             }
-           
-            // Delete the message
-            System.out.println("Deleting the message.\n");
-            String messageRecieptHandle = messages.get(0).getReceiptHandle();
-            sqs.deleteMessage(new DeleteMessageRequest(QUEUE_URL, messageRecieptHandle));
-            
-            // Close DB
-          System.out.println("Closing DB connection.\n");
-            conn.close();
-
+            } else {
+                System.out.println("No Messages in queue. Sleeping...");
+            }
         } catch (AmazonServiceException ase) {
             System.out.println("Caught an AmazonServiceException, which means your request made it " +
                     "to Amazon SQS, but was rejected with an error response for some reason.");
